@@ -1,5 +1,4 @@
 /// アプリケーション全体で使用する定数
-
 /// シナリオファイルのパス
 pub const SCENARIO_PATH: &str = "assets/scenario.json";
 
@@ -48,16 +47,29 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_constants() {
-        assert!(!SCENARIO_PATH.is_empty());
-        assert!(!FONT_CANDIDATES.is_empty());
+    fn test_constants_validity() {
+        // 定数の内容をチェック（動的値ではないため、基本的な構造のみテスト）
+        
+        // シナリオパスが設定されていることを確認
+        assert_eq!(SCENARIO_PATH, "assets/scenario.json");
+        
+        // フォント候補配列の構造を確認
+        assert_eq!(FONT_CANDIDATES.len(), 3);
+        
+        // デフォルトフォントが最初の候補と一致することを確認
         assert_eq!(DEFAULT_FONT, FONT_CANDIDATES[0]);
     }
 
     #[test]
-    fn test_ui_constants() {
-        assert!(ui::BUTTON_WIDTH > 0.0);
-        assert!(ui::BUTTON_HEIGHT > 0.0);
-        assert!(ui::TITLE_FONT_SIZE > ui::BUTTON_FONT_SIZE);
+    fn test_ui_constants_values() {
+        // UI定数の具体的な値を確認（将来の変更検知のため）
+        assert_eq!(ui::BUTTON_WIDTH, 200.0);
+        assert_eq!(ui::BUTTON_HEIGHT, 50.0);
+        assert_eq!(ui::TITLE_FONT_SIZE, 48.0);
+        assert_eq!(ui::BUTTON_FONT_SIZE, 24.0);
+        
+        // 色定数が設定されていることを確認
+        assert_ne!(ui::BUTTON_NORMAL_COLOR, ui::BUTTON_HOVER_COLOR);
+        assert_ne!(ui::TEXT_NORMAL_COLOR, ui::TEXT_DISABLED_COLOR);
     }
 }

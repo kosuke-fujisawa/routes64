@@ -91,18 +91,14 @@ fn setup_save_manager(mut commands: Commands) {
     commands.insert_resource(save_manager);
 }
 
+type BeginButtonQuery<'w, 's> = Query<'w, 's, &'static Interaction, (Changed<Interaction>, With<BeginNewButton>)>;
+type ContinueButtonQuery<'w, 's> = Query<'w, 's, &'static Interaction, (Changed<Interaction>, With<ContinueButton>, Without<crate::ui::components::Disabled>)>;
+
 fn title_button_system(
     mut begin_new_events: EventWriter<BeginNewGame>,
     mut continue_events: EventWriter<ContinueGame>,
-    begin_button_query: Query<&Interaction, (Changed<Interaction>, With<BeginNewButton>)>,
-    continue_button_query: Query<
-        &Interaction,
-        (
-            Changed<Interaction>,
-            With<ContinueButton>,
-            Without<crate::ui::components::Disabled>,
-        ),
-    >,
+    begin_button_query: BeginButtonQuery,
+    continue_button_query: ContinueButtonQuery,
     save_manager: Res<SaveManager>,
 ) {
     // Begin New ボタンの判定

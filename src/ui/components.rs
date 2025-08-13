@@ -40,10 +40,10 @@ mod tests {
 
     #[test]
     fn test_disabled_component() {
-        let disabled = Disabled;
+        let _disabled = Disabled;
         // Component trait が実装されていることを確認
         // 実際のテストでは Entity に attach してテストする
-        std::mem::drop(disabled);
+        // Disabledは単なるマーカーコンポーネントなので、作成できることのみ確認
     }
 
     #[test]

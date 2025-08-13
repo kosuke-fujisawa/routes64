@@ -1,34 +1,46 @@
 name: CI
 
 on:
-  push:
-    branches: [ main, feature/** ]
   pull_request:
     branches: [ main ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   CARGO_TERM_COLOR: always
+  CI: true
 
 jobs:
   check:
-    name: Check
+    name: Check (Linux)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true  # LFSを使っているなら
 
       - name: Install Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: stable
           components: rustfmt, clippy
-          
-      - name: Install system dependencies
+
+      - name: Install system dependencies (Bevy)
         run: |
           sudo apt-get update
-          sudo apt-get install -y libasound2-dev libudev-dev pkg-config
+          sudo apt-get install -y libasound2-dev libudev-dev pkg-config \
+            libxkbcommon-dev libwayland-dev
 
       - name: Cache cargo build
         uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            . -> target
+
+      - name: Cargo check
+        run: cargo check --all --all-features --verbose
 
       - name: Check formatting
         run: cargo fmt --all -- --check
@@ -37,7 +49,4 @@ jobs:
         run: cargo clippy --all-targets --all-features -- -D warnings
 
       - name: Run tests
-        run: cargo test --verbose
-
-      - name: Check build
-        run: cargo check --verbose
+        run: cargo test --all --all-features --verbose
