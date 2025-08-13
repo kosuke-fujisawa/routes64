@@ -95,7 +95,14 @@ fn title_button_system(
     mut begin_new_events: EventWriter<BeginNewGame>,
     mut continue_events: EventWriter<ContinueGame>,
     begin_button_query: Query<&Interaction, (Changed<Interaction>, With<BeginNewButton>)>,
-    continue_button_query: Query<&Interaction, (Changed<Interaction>, With<ContinueButton>, Without<crate::ui::components::Disabled>)>,
+    continue_button_query: Query<
+        &Interaction,
+        (
+            Changed<Interaction>,
+            With<ContinueButton>,
+            Without<crate::ui::components::Disabled>,
+        ),
+    >,
     save_manager: Res<SaveManager>,
 ) {
     // Begin New ボタンの判定
@@ -211,10 +218,10 @@ mod tests {
     fn test_app_systems_registration() {
         // システムが登録されていることのみをテスト（実行はしない）
         let app = create_app();
-        
+
         // リソース登録の確認
         assert!(app.world().get_resource::<NextState<AppState>>().is_some());
-        
+
         // イベント登録の確認（EVENTSタイプを直接確認するのは困難なので、動作による確認）
     }
 }

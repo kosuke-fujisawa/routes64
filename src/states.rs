@@ -63,7 +63,12 @@ mod tests {
 
     #[test]
     fn test_app_state_transitions() {
-        let states = [AppState::Boot, AppState::Title, AppState::Playing, AppState::Ending];
+        let states = [
+            AppState::Boot,
+            AppState::Title,
+            AppState::Playing,
+            AppState::Ending,
+        ];
         for state in states {
             match state {
                 AppState::Boot => assert_ne!(state, AppState::Title),

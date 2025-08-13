@@ -306,11 +306,11 @@ mod tests {
     #[test]
     fn test_get_node_or_fallback() {
         let scenario_data = ScenarioData::load_from_json(sample_scenario_json()).unwrap();
-        
+
         // 存在するノード
         let existing_node = scenario_data.get_node_or_fallback("R1");
         assert_eq!(existing_node.id, "R1");
-        
+
         // 存在しないノード（root 'R' にフォールバックする）
         let fallback_node = scenario_data.get_node_or_fallback("NONEXISTENT");
         assert_eq!(fallback_node.id, "R");

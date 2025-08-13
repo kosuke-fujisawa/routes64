@@ -49,7 +49,7 @@ mod tests {
     #[test]
     fn test_create_game_button() {
         let button = create_game_button();
-        
+
         // 期待される設定値を検証
         assert_eq!(button.style.width, Val::Px(200.0));
         assert_eq!(button.style.height, Val::Px(50.0));
@@ -61,7 +61,7 @@ mod tests {
     fn test_create_button_text_style() {
         let font_handle: Handle<Font> = Handle::weak_from_u128(12345);
         let text_style = create_button_text_style(font_handle.clone(), 24.0);
-        
+
         assert_eq!(text_style.font, font_handle);
         assert_eq!(text_style.font_size, 24.0);
         assert_eq!(text_style.color, Color::WHITE);

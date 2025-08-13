@@ -20,21 +20,21 @@ pub const RAIN_AUDIO_PATH: &str = "audio/rain.ogg";
 /// ゲーム設定定数
 pub mod ui {
     use bevy::prelude::Color;
-    
+
     /// ボタンの標準サイズ
     pub const BUTTON_WIDTH: f32 = 200.0;
     pub const BUTTON_HEIGHT: f32 = 50.0;
-    
+
     /// ボタンの色
     pub const BUTTON_NORMAL_COLOR: Color = Color::srgb(0.3, 0.3, 0.3);
     pub const BUTTON_HOVER_COLOR: Color = Color::srgb(0.5, 0.5, 0.5);
     pub const BUTTON_PRESSED_COLOR: Color = Color::srgb(0.6, 0.6, 0.6);
     pub const BUTTON_DISABLED_COLOR: Color = Color::srgb(0.1, 0.1, 0.1);
-    
+
     /// テキストの色
     pub const TEXT_NORMAL_COLOR: Color = Color::WHITE;
     pub const TEXT_DISABLED_COLOR: Color = Color::srgb(0.5, 0.5, 0.5);
-    
+
     /// フォントサイズ
     pub const TITLE_FONT_SIZE: f32 = 48.0;
     pub const BUTTON_FONT_SIZE: f32 = 24.0;
@@ -46,14 +46,14 @@ pub mod ui {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_constants() {
         assert!(!SCENARIO_PATH.is_empty());
         assert!(!FONT_CANDIDATES.is_empty());
         assert_eq!(DEFAULT_FONT, FONT_CANDIDATES[0]);
     }
-    
+
     #[test]
     fn test_ui_constants() {
         assert!(ui::BUTTON_WIDTH > 0.0);

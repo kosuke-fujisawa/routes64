@@ -2,7 +2,9 @@ use crate::app::constants::ui::*;
 use crate::save::SaveManager;
 use crate::scenario::{Current, ScenarioData};
 use crate::states::*;
-use crate::ui::components::{Disabled, create_game_button, create_game_button_with_color, create_button_text_style};
+use crate::ui::components::{
+    create_button_text_style, create_game_button, create_game_button_with_color, Disabled,
+};
 use bevy::prelude::*;
 
 #[derive(Resource)]
@@ -65,10 +67,7 @@ pub fn setup_title_ui(
             ));
 
             parent
-                .spawn((
-                    create_game_button(),
-                    BeginNewButton,
-                ))
+                .spawn((create_game_button(), BeginNewButton))
                 .with_children(|parent| {
                     parent.spawn(TextBundle::from_section(
                         "はじめから",
@@ -84,27 +83,26 @@ pub fn setup_title_ui(
                 }),
                 ContinueButton,
             ));
-            
+
             // セーブがない場合はDisabledコンポーネントを追加
             if !has_save {
                 continue_entity.insert(Disabled);
             }
-            
-            continue_entity
-                .with_children(|parent| {
-                    parent.spawn(TextBundle::from_section(
-                        "前回の続きから",
-                        TextStyle {
-                            font: font.0.clone(),
-                            font_size: BUTTON_FONT_SIZE,
-                            color: if has_save {
-                                TEXT_NORMAL_COLOR
-                            } else {
-                                TEXT_DISABLED_COLOR
-                            },
+
+            continue_entity.with_children(|parent| {
+                parent.spawn(TextBundle::from_section(
+                    "前回の続きから",
+                    TextStyle {
+                        font: font.0.clone(),
+                        font_size: BUTTON_FONT_SIZE,
+                        color: if has_save {
+                            TEXT_NORMAL_COLOR
+                        } else {
+                            TEXT_DISABLED_COLOR
                         },
-                    ));
-                });
+                    },
+                ));
+            });
         });
 }
 
@@ -267,7 +265,7 @@ pub fn setup_ending_ui(
                         &ending.tag,
                         TextStyle {
                             font: font.0.clone(),
-                            font_size: 32.0,  // エンディング名は特別なので固有のサイズを保持
+                            font_size: 32.0, // エンディング名は特別なので固有のサイズを保持
                             color: Color::srgb(1.0, 0.8, 0.0),
                         },
                     ));
@@ -277,7 +275,7 @@ pub fn setup_ending_ui(
                 .spawn((
                     ButtonBundle {
                         style: Style {
-                            width: Val::Px(150.0),  // Restartボタンのみ異なる幅
+                            width: Val::Px(150.0), // Restartボタンのみ異なる幅
                             height: Val::Px(50.0),
                             justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
