@@ -14,7 +14,9 @@ pub struct Meta {
     pub title: String,
     pub depth: usize,
     pub default_background: String,
+    #[allow(dead_code)]
     pub rain_bgm: String,
+    #[allow(dead_code)]
     pub font: String,
 }
 
