@@ -145,6 +145,17 @@ impl ScenarioData {
         self.nodes.get(id)
     }
 
+    /// ノードが存在しない場合は警告を出してroot('R')にフォールバックする
+    pub fn get_node_or_fallback(&self, id: &str) -> &Node {
+        if let Some(node) = self.nodes.get(id) {
+            node
+        } else {
+            warn!("Node '{}' not found, falling back to root 'R'", id);
+            // root('R')が存在しない場合はパニックするが、これは設計上の問題
+            self.nodes.get("R").expect("Root node 'R' must exist")
+        }
+    }
+
     pub fn transition(&self, current: &Current, choice_index: usize) -> Result<Current> {
         let node = self
             .get_node(&current.id)
@@ -188,7 +199,7 @@ mod tests {
         r#"{
           "meta": {
             "title": "64ルート",
-            "depth": 6,
+            "depth": 2,
             "default_background": "images/bg01.png",
             "rain_bgm": "audio/rain.ogg",
             "font": "fonts/NotoSansJP-Regular.ttf"
@@ -221,9 +232,24 @@ mod tests {
               ]
             },
             {
-              "id": "R101011",
-              "text": "曲がり角、わずかな遅れですれ違う。",
-              "ending": {"tag": "すれ違いEND"}
+              "id": "R11",
+              "text": "傘をさして外に出る。",
+              "ending": {"tag": "傘END"}
+            },
+            {
+              "id": "R10",
+              "text": "走って外に出る。",
+              "ending": {"tag": "走りEND"}
+            },
+            {
+              "id": "R01",
+              "text": "本を読んで過ごす。",
+              "ending": {"tag": "読書END"}
+            },
+            {
+              "id": "R00",
+              "text": "寝て過ごす。",
+              "ending": {"tag": "睡眠END"}
             }
           ]
         }"#
@@ -233,8 +259,8 @@ mod tests {
     fn test_load_scenario() {
         let scenario_data = ScenarioData::load_from_json(sample_scenario_json()).unwrap();
         assert_eq!(scenario_data.scenario.meta.title, "64ルート");
-        assert_eq!(scenario_data.scenario.meta.depth, 6);
-        assert_eq!(scenario_data.nodes.len(), 4);
+        assert_eq!(scenario_data.scenario.meta.depth, 2);
+        assert_eq!(scenario_data.nodes.len(), 7);
     }
 
     #[test]
@@ -252,9 +278,9 @@ mod tests {
     fn test_ending_detection() {
         let scenario_data = ScenarioData::load_from_json(sample_scenario_json()).unwrap();
         let ending_current = Current {
-            id: "R101011".to_string(),
-            depth: 6,
-            trail: vec!["R".to_string(), "R1".to_string(), "R101011".to_string()],
+            id: "R11".to_string(),
+            depth: 2,
+            trail: vec!["R".to_string(), "R1".to_string(), "R11".to_string()],
         };
 
         assert!(scenario_data.is_ending(&ending_current));
@@ -275,5 +301,18 @@ mod tests {
 
         let result = ScenarioData::load_from_json(invalid_json);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_get_node_or_fallback() {
+        let scenario_data = ScenarioData::load_from_json(sample_scenario_json()).unwrap();
+        
+        // 存在するノード
+        let existing_node = scenario_data.get_node_or_fallback("R1");
+        assert_eq!(existing_node.id, "R1");
+        
+        // 存在しないノード（root 'R' にフォールバックする）
+        let fallback_node = scenario_data.get_node_or_fallback("NONEXISTENT");
+        assert_eq!(fallback_node.id, "R");
     }
 }

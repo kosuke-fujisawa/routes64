@@ -1,6 +1,8 @@
+use crate::app::constants::ui::*;
 use crate::save::SaveManager;
 use crate::scenario::{Current, ScenarioData};
 use crate::states::*;
+use crate::ui::components::{Disabled, create_game_button, create_game_button_with_color, create_button_text_style};
 use bevy::prelude::*;
 
 #[derive(Resource)]
@@ -9,10 +11,8 @@ pub struct GameFont(pub Handle<Font>);
 pub fn setup_background(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    scenario_data: Option<Res<ScenarioData>>,
+    scenario_data: Res<ScenarioData>,
 ) {
-    let Some(scenario_data) = scenario_data else { return; };
-    
     let background_handle: Handle<Image> =
         asset_server.load(&scenario_data.scenario.meta.default_background);
 
@@ -59,67 +59,48 @@ pub fn setup_title_ui(
                 &scenario_data.scenario.meta.title,
                 TextStyle {
                     font: font.0.clone(),
-                    font_size: 48.0,
-                    color: Color::WHITE,
+                    font_size: TITLE_FONT_SIZE,
+                    color: TEXT_NORMAL_COLOR,
                 },
             ));
 
             parent
                 .spawn((
-                    ButtonBundle {
-                        style: Style {
-                            width: Val::Px(200.0),
-                            height: Val::Px(50.0),
-                            justify_content: JustifyContent::Center,
-                            align_items: AlignItems::Center,
-                            ..default()
-                        },
-                        background_color: Color::srgb(0.3, 0.3, 0.3).into(),
-                        ..default()
-                    },
+                    create_game_button(),
                     BeginNewButton,
                 ))
                 .with_children(|parent| {
                     parent.spawn(TextBundle::from_section(
                         "はじめから",
-                        TextStyle {
-                            font: font.0.clone(),
-                            font_size: 24.0,
-                            color: Color::WHITE,
-                        },
+                        create_button_text_style(font.0.clone(), BUTTON_FONT_SIZE),
                     ));
                 });
 
-            parent
-                .spawn((
-                    ButtonBundle {
-                        style: Style {
-                            width: Val::Px(200.0),
-                            height: Val::Px(50.0),
-                            justify_content: JustifyContent::Center,
-                            align_items: AlignItems::Center,
-                            ..default()
-                        },
-                        background_color: if has_save {
-                            Color::srgb(0.3, 0.3, 0.3)
-                        } else {
-                            Color::srgb(0.1, 0.1, 0.1)
-                        }
-                        .into(),
-                        ..default()
-                    },
-                    ContinueButton,
-                ))
+            let mut continue_entity = parent.spawn((
+                create_game_button_with_color(if has_save {
+                    BUTTON_NORMAL_COLOR
+                } else {
+                    BUTTON_DISABLED_COLOR
+                }),
+                ContinueButton,
+            ));
+            
+            // セーブがない場合はDisabledコンポーネントを追加
+            if !has_save {
+                continue_entity.insert(Disabled);
+            }
+            
+            continue_entity
                 .with_children(|parent| {
                     parent.spawn(TextBundle::from_section(
                         "前回の続きから",
                         TextStyle {
                             font: font.0.clone(),
-                            font_size: 24.0,
+                            font_size: BUTTON_FONT_SIZE,
                             color: if has_save {
-                                Color::WHITE
+                                TEXT_NORMAL_COLOR
                             } else {
-                                Color::srgb(0.5, 0.5, 0.5)
+                                TEXT_DISABLED_COLOR
                             },
                         },
                     ));
@@ -133,7 +114,7 @@ pub fn setup_playing_ui(
     scenario_data: Res<ScenarioData>,
     current: Res<Current>,
 ) {
-    let node = scenario_data.get_node(&current.id).unwrap();
+    let node = scenario_data.get_node_or_fallback(&current.id);
 
     commands
         .spawn((
@@ -170,8 +151,8 @@ pub fn setup_playing_ui(
                             &node.text,
                             TextStyle {
                                 font: font.0.clone(),
-                                font_size: 24.0,
-                                color: Color::WHITE,
+                                font_size: GAME_TEXT_FONT_SIZE,
+                                color: TEXT_NORMAL_COLOR,
                             },
                         ),
                         GameText,
@@ -211,8 +192,8 @@ pub fn setup_playing_ui(
                                         &choice.label,
                                         TextStyle {
                                             font: font.0.clone(),
-                                            font_size: 18.0,
-                                            color: Color::WHITE,
+                                            font_size: CHOICE_FONT_SIZE,
+                                            color: TEXT_NORMAL_COLOR,
                                         },
                                     ));
                                 });
@@ -228,7 +209,7 @@ pub fn setup_ending_ui(
     scenario_data: Res<ScenarioData>,
     current: Res<Current>,
 ) {
-    let node = scenario_data.get_node(&current.id).unwrap();
+    let node = scenario_data.get_node_or_fallback(&current.id);
     let ending = node.ending.as_ref().unwrap();
 
     commands
@@ -268,8 +249,8 @@ pub fn setup_ending_ui(
                         &node.text,
                         TextStyle {
                             font: font.0.clone(),
-                            font_size: 24.0,
-                            color: Color::WHITE,
+                            font_size: GAME_TEXT_FONT_SIZE,
+                            color: TEXT_NORMAL_COLOR,
                         },
                     ));
 
@@ -277,7 +258,7 @@ pub fn setup_ending_ui(
                         format!("ルートID: {}", current.id),
                         TextStyle {
                             font: font.0.clone(),
-                            font_size: 18.0,
+                            font_size: CHOICE_FONT_SIZE,
                             color: Color::srgb(0.8, 0.8, 0.8),
                         },
                     ));
@@ -286,7 +267,7 @@ pub fn setup_ending_ui(
                         &ending.tag,
                         TextStyle {
                             font: font.0.clone(),
-                            font_size: 32.0,
+                            font_size: 32.0,  // エンディング名は特別なので固有のサイズを保持
                             color: Color::srgb(1.0, 0.8, 0.0),
                         },
                     ));
@@ -296,7 +277,7 @@ pub fn setup_ending_ui(
                 .spawn((
                     ButtonBundle {
                         style: Style {
-                            width: Val::Px(150.0),
+                            width: Val::Px(150.0),  // Restartボタンのみ異なる幅
                             height: Val::Px(50.0),
                             justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
@@ -310,11 +291,7 @@ pub fn setup_ending_ui(
                 .with_children(|parent| {
                     parent.spawn(TextBundle::from_section(
                         "もう一度",
-                        TextStyle {
-                            font: font.0.clone(),
-                            font_size: 20.0,
-                            color: Color::WHITE,
-                        },
+                        create_button_text_style(font.0.clone(), RESTART_FONT_SIZE),
                     ));
                 });
         });
@@ -345,20 +322,20 @@ type ButtonInteractionQuery<'w, 's> = Query<
     'w,
     's,
     (&'static Interaction, &'static mut BackgroundColor),
-    (Changed<Interaction>, With<Button>),
+    (Changed<Interaction>, With<Button>, Without<Disabled>),
 >;
 
 pub fn button_interaction_system(mut interaction_query: ButtonInteractionQuery) {
     for (interaction, mut color) in interaction_query.iter_mut() {
         match *interaction {
             Interaction::Pressed => {
-                *color = Color::srgb(0.6, 0.6, 0.6).into();
+                *color = BUTTON_PRESSED_COLOR.into();
             }
             Interaction::Hovered => {
-                *color = Color::srgb(0.5, 0.5, 0.5).into();
+                *color = BUTTON_HOVER_COLOR.into();
             }
             Interaction::None => {
-                *color = Color::srgb(0.3, 0.3, 0.3).into();
+                *color = BUTTON_NORMAL_COLOR.into();
             }
         }
     }

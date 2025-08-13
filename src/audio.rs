@@ -1,16 +1,17 @@
+#[cfg(feature = "rain_bgm")]
 use bevy::audio::Volume;
 use bevy::prelude::*;
 
+#[cfg(feature = "rain_bgm")]
 #[derive(Resource)]
 pub struct RainAudioHandle(pub Handle<AudioSource>);
 
+#[cfg(feature = "rain_bgm")]
 pub fn start_rain_loop(
     mut commands: Commands,
-    rain_handle: Option<Res<RainAudioHandle>>,
+    rain_handle: Res<RainAudioHandle>,
     audio_query: Query<Entity, With<RainLoop>>,
 ) {
-    let Some(rain_handle) = rain_handle else { return; };
-    
     if audio_query.is_empty() {
         commands.spawn((
             AudioBundle {
@@ -23,10 +24,17 @@ pub fn start_rain_loop(
     }
 }
 
+// rain_bgm feature が無効な場合のダミー実装
+#[cfg(not(feature = "rain_bgm"))]
+pub fn start_rain_loop() {
+    // 何もしない（雨音を再生しない）
+}
+
+#[cfg(feature = "rain_bgm")]
 #[derive(Component)]
 pub struct RainLoop;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "rain_bgm"))]
 mod tests {
     use super::*;
 
