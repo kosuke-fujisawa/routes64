@@ -1,0 +1,25 @@
+[package]
+name = "routes64"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = []
+rain_bgm = []
+
+[dependencies]
+bevy = "0.14"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+thiserror = "1"
+directories = "5"
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[dev-dependencies]
+tempfile = "3.20.0"
