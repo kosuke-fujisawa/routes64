@@ -1,5 +1,6 @@
 #[cfg(feature = "rain_bgm")]
 use bevy::audio::Volume;
+#[cfg(feature = "rain_bgm")]
 use bevy::prelude::*;
 
 #[cfg(feature = "rain_bgm")]

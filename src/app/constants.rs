@@ -1,5 +1,3 @@
-/// アプリケーション全体で使用する定数
-
 /// 利用可能なフォント候補（優先順）
 pub const FONT_CANDIDATES: &[&str] = &[
     "fonts/NotoSansJP-Regular.ttf",
