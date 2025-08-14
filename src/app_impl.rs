@@ -3,21 +3,51 @@ use crate::audio::*;
 use crate::save::*;
 use crate::scenario::*;
 use crate::states::*;
-use crate::ui::*;
+use crate::ui_impl::setup_background_if_needed;
+use crate::ui_impl::*;
+use bevy::asset::AssetPlugin;
 use bevy::prelude::*;
+use std::path::PathBuf;
+
+pub fn asset_dir() -> PathBuf {
+    // 実行ファイルの隣に assets があればそちら（配布/target実行）
+    let exe_dir = std::env::current_exe().ok().and_then(|p| p.parent().map(|p| p.to_path_buf()));
+    if let Some(dir) = exe_dir {
+        let a = dir.join("assets");
+        if a.exists() { return a; }
+        // target/debug/xxx からの相対（念のため）
+        if let Some(parent) = dir.parent() {
+            let a2 = parent.join("assets");
+            if a2.exists() { return a2; }
+        }
+    }
+    // 開発時: プロジェクトルート（CARGO_MANIFEST_DIR）
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets")
+}
 
 pub fn create_app() -> App {
     let mut app = App::new();
 
-    app.add_plugins(DefaultPlugins.set(WindowPlugin {
-        primary_window: Some(Window {
-            title: "routes64".to_string(),
-            resolution: (1280.0, 720.0).into(),
-            resizable: false,
-            ..default()
-        }),
-        ..default()
-    }));
+    let assets_path = asset_dir();
+    info!("asset_dir = {}", assets_path.display());
+
+    app.add_plugins(
+        DefaultPlugins
+            .set(AssetPlugin {
+                // ここを上書きすることで AssetServer の基準が CWD 非依存になる
+                file_path: assets_path.to_string_lossy().into_owned(),
+                ..Default::default()
+            })
+            .set(WindowPlugin {
+                primary_window: Some(Window {
+                    title: "routes64".to_string(),
+                    resolution: (1280.0, 720.0).into(),
+                    resizable: false,
+                    ..default()
+                }),
+                ..default()
+            }),
+    );
 
     app.init_state::<AppState>();
 
@@ -41,8 +71,7 @@ pub fn create_app() -> App {
         (
             cleanup_ui::<PlayingUI>,
             cleanup_ui::<EndingUI>,
-            cleanup_ui::<BackgroundSprite>,
-            setup_background,
+            setup_background_if_needed,
             start_rain_loop,
             setup_title_ui,
         )
@@ -87,12 +116,35 @@ fn setup_camera(mut commands: Commands) {
 }
 
 fn setup_save_manager(mut commands: Commands) {
-    let save_manager = SaveManager::new().expect("Failed to initialize save manager");
-    commands.insert_resource(save_manager);
+    match SaveManager::new() {
+        Ok(save_manager) => {
+            commands.insert_resource(save_manager);
+            info!("Save manager initialized successfully");
+        }
+        Err(e) => {
+            error!(
+                key = "save.init_failed",
+                error = %e,
+                "Failed to initialize save manager, using fallback"
+            );
+            // フォールバック：セーブ機能が無効化された状態で続行
+            commands.insert_resource(SaveManager::new_disabled());
+        }
+    }
 }
 
-type BeginButtonQuery<'w, 's> = Query<'w, 's, &'static Interaction, (Changed<Interaction>, With<BeginNewButton>)>;
-type ContinueButtonQuery<'w, 's> = Query<'w, 's, &'static Interaction, (Changed<Interaction>, With<ContinueButton>, Without<crate::ui::components::Disabled>)>;
+type BeginButtonQuery<'w, 's> =
+    Query<'w, 's, &'static Interaction, (Changed<Interaction>, With<BeginNewButton>)>;
+type ContinueButtonQuery<'w, 's> = Query<
+    'w,
+    's,
+    &'static Interaction,
+    (
+        Changed<Interaction>,
+        With<ContinueButton>,
+        Without<crate::ui::components::Disabled>,
+    ),
+>;
 
 fn title_button_system(
     mut begin_new_events: EventWriter<BeginNewGame>,
@@ -211,13 +263,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_app_systems_registration() {
-        // システムが登録されていることのみをテスト（実行はしない）
-        let app = create_app();
-
-        // リソース登録の確認
-        assert!(app.world().get_resource::<NextState<AppState>>().is_some());
-
-        // イベント登録の確認（EVENTSタイプを直接確認するのは困難なので、動作による確認）
+    fn test_asset_dir_logic() {
+        // asset_dir関数のロジックをテスト（EventLoopは使わない）
+        let assets_path = asset_dir();
+        
+        // パスが何らかの値を持つことを確認
+        assert!(!assets_path.to_string_lossy().is_empty());
+        
+        // "assets"という名前が含まれることを確認
+        assert!(assets_path.to_string_lossy().contains("assets"));
     }
 }

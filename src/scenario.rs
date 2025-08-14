@@ -150,9 +150,26 @@ impl ScenarioData {
         if let Some(node) = self.nodes.get(id) {
             node
         } else {
-            warn!("Node '{}' not found, falling back to root 'R'", id);
-            // root('R')が存在しない場合はパニックするが、これは設計上の問題
-            self.nodes.get("R").expect("Root node 'R' must exist")
+            warn!(
+                key = "scenario.node_missing",
+                id = %id,
+                "Node not found, falling back to root 'R'"
+            );
+            // root('R')が存在しない場合は最初のノードを返す（設計上の問題を回避）
+            if let Some(root_node) = self.nodes.get("R") {
+                root_node
+            } else {
+                error!(
+                    key = "scenario.root_missing",
+                    "Root node 'R' missing, using first available node"
+                );
+                // 最後の手段：最初に見つかったノードを返す
+                self.scenario.nodes.first()
+                    .unwrap_or_else(|| {
+                        // これは設計上起こり得ないが、空のノードリストの場合の処理
+                        panic!("No nodes available in scenario - this indicates a critical configuration error")
+                    })
+            }
         }
     }
 

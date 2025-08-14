@@ -7,7 +7,7 @@ mod states;
 mod ui;
 mod ui_impl;
 
-use app::create_app;
+use app_impl::create_app;
 
 fn main() {
     create_app().run();

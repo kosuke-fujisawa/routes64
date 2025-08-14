@@ -30,7 +30,7 @@ AI 運用 6 原則
 
 ## プロジェクト概要
 
-# routes64
+# Route64
 
 雨の朝、6回の二択が、64通りの未来を分ける。
 
@@ -38,7 +38,7 @@ AI 運用 6 原則
 
 ## 概要
 
-『routes64』は、短時間で64通りの結末にたどり着ける分岐型ノベルゲームです。
+『Route64』は、短時間で64通りの結末にたどり着ける分岐型ノベルゲームです。
 プレイ時間は1ルートあたり約1〜2分。
 選択は常に二択。
 一見単純に見える選択が、少しずつ未来を変えていきます。
@@ -635,7 +635,7 @@ cargo check
 routes64/
 ├── Cargo.toml              # Rust/Bevy プロジェクト設定
 ├── assets/
-│   ├── scenario.json       # routes64完全版シナリオデータ
+│   ├── scenario.json       # Route64完全版シナリオデータ
 │   ├── audio/rain.ogg      # 雨音ループ（プレースホルダー）
 │   ├── images/
 │   │   ├── bg01.png        # 背景画像（プレースホルダー）
@@ -669,7 +669,7 @@ routes64/
 - **DDD + クリーンアーキテクチャ**: scenario/states/ui/audio/save モジュール分離
 - **ECS パターン**: BexyのEntity-Component-System活用
 - **透明オートセーブ**: directories crateでクロスプラットフォーム対応
-- **routes64完全実装**: 6階層分岐構造をJSON化、全エンディング実装済み
+- **Route64完全実装**: 6階層分岐構造をJSON化、全エンディング実装済み
 - **コンパイル成功**: Debug/Release両モードでビルド確認済み
 
 ---

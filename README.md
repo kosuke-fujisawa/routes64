@@ -55,7 +55,7 @@
 
 ## インストール
 1.  ダウンロードしたzipファイルを展開します。
-2.  Windowsの場合は 64route.exe を、macOSの場合は 64route.app を起動します。
+2.  Windowsの場合は Route64.exe を、macOSの場合は Route64.app を起動します。
     ※ macOSでは初回起動時にセキュリティ設定で許可が必要な場合があります。
 
 ⸻

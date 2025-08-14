@@ -1,8 +1,11 @@
-use crate::app::constants::{DEFAULT_FONT, SCENARIO_PATH};
+use crate::app::constants::DEFAULT_FONT;
+use crate::app_impl::asset_dir;
 use crate::scenario::{Current, ScenarioData};
 use crate::states::AppState;
-use crate::ui::GameFont;
+use crate::ui_impl::GameFont;
+use anyhow;
 use bevy::prelude::*;
+use std::fs;
 
 #[cfg(feature = "rain_bgm")]
 use crate::app::constants::RAIN_AUDIO_PATH;
@@ -16,6 +19,9 @@ pub struct LoadingResources {
     #[cfg(feature = "rain_bgm")]
     pub rain_handle: Option<Handle<AudioSource>>,
 }
+
+#[derive(Resource)]
+pub struct BootError(pub Option<String>);
 
 #[derive(Resource, Default)]
 pub struct ResourceReadiness {
@@ -39,15 +45,29 @@ impl ResourceReadiness {
     }
 }
 
+fn read_scenario_text() -> anyhow::Result<String> {
+    let base = asset_dir();
+    let p = base.join("scenario.json");
+    let txt = fs::read_to_string(&p)
+        .map_err(|e| anyhow::anyhow!("read {:?} failed: {}", p, e))?;
+    Ok(txt)
+}
+
 /// Boot ステートでリソースのロードを開始
 pub fn start_resource_loading(mut commands: Commands, asset_server: Res<AssetServer>) {
     info!("Starting resource loading...");
 
-    // シナリオファイルを同期的に読み込み（しばらくは既存のアプローチを維持）
-    let scenario_json = match std::fs::read_to_string(SCENARIO_PATH) {
+    // シナリオファイルを同期的に読み込み（将来的に非同期化予定）
+    let scenario_json = match read_scenario_text() {
         Ok(content) => content,
         Err(e) => {
-            error!("Failed to read {}: {}", SCENARIO_PATH, e);
+            error!(
+                key = "boot.scenario_read_failed",
+                error = %e,
+                "Failed to read scenario file"
+            );
+            // ここで「エラー状態」に落とす
+            commands.insert_resource(BootError(Some(e.to_string())));
             return;
         }
     };
@@ -77,10 +97,21 @@ pub fn start_resource_loading(mut commands: Commands, asset_server: Res<AssetSer
 pub fn check_resources_loaded(
     mut commands: Commands,
     mut next_state: ResMut<NextState<AppState>>,
-    loading_resources: Res<LoadingResources>,
-    mut resource_readiness: ResMut<ResourceReadiness>,
+    loading_resources: Option<Res<LoadingResources>>,
+    resource_readiness: Option<ResMut<ResourceReadiness>>,
     asset_server: Res<AssetServer>,
+    boot_err: Option<Res<BootError>>,
 ) {
+    if let Some(err) = boot_err.as_ref().and_then(|e| e.0.as_ref()) {
+        // エラー画面へ誘導するならここで AppState::Error に遷移
+        error!("boot failed: {err}");
+        // とりあえずTitleに遷移させる（Error状態は未実装のため）
+        next_state.set(AppState::Title);
+        return;
+    }
+    
+    let Some(loading_resources) = loading_resources else { return; }; // ロード完了前は何もしない
+    let Some(mut resource_readiness) = resource_readiness else { return; };
     // シナリオファイルの読み込み状況をチェック
     if !resource_readiness.scenario_loaded {
         if let Some(json_content) = &loading_resources.scenario_json {
@@ -92,7 +123,11 @@ pub fn check_resources_loaded(
                     info!("Scenario loaded successfully");
                 }
                 Err(e) => {
-                    error!("Failed to parse scenario: {}", e);
+                    error!(
+                        key = "boot.scenario_parse_failed",
+                        error = %e,
+                        "Failed to parse scenario"
+                    );
                     return;
                 }
             }

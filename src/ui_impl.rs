@@ -10,6 +10,12 @@ use bevy::prelude::*;
 #[derive(Resource)]
 pub struct GameFont(pub Handle<Font>);
 
+/// 背景スプライトを無条件で作成する（直接呼び出し用）
+/// 
+/// 現在は setup_background_if_needed() を使用しているため直接の呼び出しはないが、
+/// 将来的に背景の強制再作成が必要になった場合のために保持している。
+/// 例: 背景画像の動的切り替え、デバッグ時の背景リセットなど
+#[allow(dead_code)]
 pub fn setup_background(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -26,6 +32,32 @@ pub fn setup_background(
         },
         BackgroundSprite,
     ));
+}
+
+/// 背景スプライトが存在しない場合のみ作成する（一意性保証）
+pub fn setup_background_if_needed(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    scenario_data: Res<ScenarioData>,
+    background_query: Query<Entity, With<BackgroundSprite>>,
+) {
+    // 既に背景スプライトが存在する場合は何もしない
+    if background_query.is_empty() {
+        let background_handle: Handle<Image> =
+            asset_server.load(&scenario_data.scenario.meta.default_background);
+
+        commands.spawn((
+            SpriteBundle {
+                texture: background_handle,
+                transform: Transform::from_scale(Vec3::splat(2.0)),
+                ..default()
+            },
+            BackgroundSprite,
+        ));
+        info!("Background sprite created");
+    } else {
+        debug!("Background sprite already exists, skipping creation");
+    }
 }
 
 #[derive(Component)]
@@ -208,7 +240,17 @@ pub fn setup_ending_ui(
     current: Res<Current>,
 ) {
     let node = scenario_data.get_node_or_fallback(&current.id);
-    let ending = node.ending.as_ref().unwrap();
+    let ending = match node.ending.as_ref() {
+        Some(ending) => ending,
+        None => {
+            error!(
+                key = "ui.ending.node_missing",
+                id = %current.id,
+                "Node has no ending data, returning early"
+            );
+            return;
+        }
+    };
 
     commands
         .spawn((

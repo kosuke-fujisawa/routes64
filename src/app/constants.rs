@@ -1,6 +1,4 @@
 /// アプリケーション全体で使用する定数
-/// シナリオファイルのパス
-pub const SCENARIO_PATH: &str = "assets/scenario.json";
 
 /// 利用可能なフォント候補（優先順）
 pub const FONT_CANDIDATES: &[&str] = &[
@@ -49,13 +47,12 @@ mod tests {
     #[test]
     fn test_constants_validity() {
         // 定数の内容をチェック（動的値ではないため、基本的な構造のみテスト）
-        
-        // シナリオパスが設定されていることを確認
-        assert_eq!(SCENARIO_PATH, "assets/scenario.json");
-        
+
+        // フォント候補配列が設定されていることを確認
+
         // フォント候補配列の構造を確認
         assert_eq!(FONT_CANDIDATES.len(), 3);
-        
+
         // デフォルトフォントが最初の候補と一致することを確認
         assert_eq!(DEFAULT_FONT, FONT_CANDIDATES[0]);
     }
@@ -67,7 +64,7 @@ mod tests {
         assert_eq!(ui::BUTTON_HEIGHT, 50.0);
         assert_eq!(ui::TITLE_FONT_SIZE, 48.0);
         assert_eq!(ui::BUTTON_FONT_SIZE, 24.0);
-        
+
         // 色定数が設定されていることを確認
         assert_ne!(ui::BUTTON_NORMAL_COLOR, ui::BUTTON_HOVER_COLOR);
         assert_ne!(ui::TEXT_NORMAL_COLOR, ui::TEXT_DISABLED_COLOR);

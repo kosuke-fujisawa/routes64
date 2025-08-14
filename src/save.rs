@@ -17,6 +17,7 @@ pub struct SaveData {
 #[derive(Resource)]
 pub struct SaveManager {
     save_path: PathBuf,
+    disabled: bool,
 }
 
 impl SaveManager {
@@ -30,10 +31,26 @@ impl SaveManager {
 
         let save_path = data_dir.join("save.json");
 
-        Ok(Self { save_path })
+        Ok(Self {
+            save_path,
+            disabled: false,
+        })
+    }
+
+    /// セーブ機能が無効化されたSaveManagerを作成
+    pub fn new_disabled() -> Self {
+        Self {
+            save_path: PathBuf::new(), // 無効なパス
+            disabled: true,
+        }
     }
 
     pub fn save(&self, current: &Current) -> Result<()> {
+        if self.disabled {
+            debug!("Save disabled, skipping save operation");
+            return Ok(());
+        }
+
         let save_data = SaveData {
             version: 1,
             current: current.id.clone(),
@@ -56,6 +73,11 @@ impl SaveManager {
     }
 
     pub fn load(&self) -> Result<Option<Current>> {
+        if self.disabled {
+            debug!("Save disabled, no save data available");
+            return Ok(None);
+        }
+
         if !self.save_path.exists() {
             return Ok(None);
         }
@@ -103,6 +125,9 @@ impl SaveManager {
     }
 
     pub fn has_save(&self) -> bool {
+        if self.disabled {
+            return false;
+        }
         self.save_path.exists()
     }
 }
@@ -120,15 +145,21 @@ mod tests {
     use super::*;
     use tempfile::tempdir;
 
-    fn create_test_save_manager() -> SaveManager {
+    fn create_test_save_manager() -> (SaveManager, tempfile::TempDir) {
         let temp_dir = tempdir().unwrap();
         let save_path = temp_dir.path().join("test_save.json");
-        SaveManager { save_path }
+
+        let save_manager = SaveManager {
+            save_path,
+            disabled: false,
+        };
+
+        (save_manager, temp_dir)
     }
 
     #[test]
     fn test_save_and_load() {
-        let save_manager = create_test_save_manager();
+        let (save_manager, _temp_dir) = create_test_save_manager();
 
         let original_current = Current {
             id: "R101".to_string(),
@@ -152,7 +183,7 @@ mod tests {
 
     #[test]
     fn test_load_nonexistent_save() {
-        let save_manager = create_test_save_manager();
+        let (save_manager, _temp_dir) = create_test_save_manager();
 
         let result = save_manager.load().unwrap();
         assert!(result.is_none());
@@ -161,7 +192,7 @@ mod tests {
 
     #[test]
     fn test_delete_save() {
-        let save_manager = create_test_save_manager();
+        let (save_manager, _temp_dir) = create_test_save_manager();
         let current = Current::default();
 
         save_manager.save(&current).unwrap();
@@ -173,9 +204,9 @@ mod tests {
 
     #[test]
     fn test_version_mismatch() {
-        let save_manager = create_test_save_manager();
+        let (save_manager, _temp_dir) = create_test_save_manager();
 
-        let invalid_save = r#"{"version": 999, "current": "R", "depth": 0, "trail": ["R"]}"#;
+        let invalid_save = r#"{"version": 255, "current": "R", "depth": 0, "trail": ["R"]}"#;
         fs::write(&save_manager.save_path, invalid_save).unwrap();
 
         let result = save_manager.load().unwrap();
