@@ -48,8 +48,7 @@ impl ResourceReadiness {
 fn read_scenario_text() -> anyhow::Result<String> {
     let base = asset_dir();
     let p = base.join("scenario.json");
-    let txt = fs::read_to_string(&p)
-        .map_err(|e| anyhow::anyhow!("read {:?} failed: {}", p, e))?;
+    let txt = fs::read_to_string(&p).map_err(|e| anyhow::anyhow!("read {:?} failed: {}", p, e))?;
     Ok(txt)
 }
 
@@ -109,9 +108,13 @@ pub fn check_resources_loaded(
         next_state.set(AppState::Title);
         return;
     }
-    
-    let Some(loading_resources) = loading_resources else { return; }; // ロード完了前は何もしない
-    let Some(mut resource_readiness) = resource_readiness else { return; };
+
+    let Some(loading_resources) = loading_resources else {
+        return;
+    }; // ロード完了前は何もしない
+    let Some(mut resource_readiness) = resource_readiness else {
+        return;
+    };
     // シナリオファイルの読み込み状況をチェック
     if !resource_readiness.scenario_loaded {
         if let Some(json_content) = &loading_resources.scenario_json {

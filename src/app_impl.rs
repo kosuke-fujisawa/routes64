@@ -11,14 +11,20 @@ use std::path::PathBuf;
 
 pub fn asset_dir() -> PathBuf {
     // 実行ファイルの隣に assets があればそちら（配布/target実行）
-    let exe_dir = std::env::current_exe().ok().and_then(|p| p.parent().map(|p| p.to_path_buf()));
+    let exe_dir = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(|p| p.to_path_buf()));
     if let Some(dir) = exe_dir {
         let a = dir.join("assets");
-        if a.exists() { return a; }
+        if a.exists() {
+            return a;
+        }
         // target/debug/xxx からの相対（念のため）
         if let Some(parent) = dir.parent() {
             let a2 = parent.join("assets");
-            if a2.exists() { return a2; }
+            if a2.exists() {
+                return a2;
+            }
         }
     }
     // 開発時: プロジェクトルート（CARGO_MANIFEST_DIR）
@@ -266,10 +272,10 @@ mod tests {
     fn test_asset_dir_logic() {
         // asset_dir関数のロジックをテスト（EventLoopは使わない）
         let assets_path = asset_dir();
-        
+
         // パスが何らかの値を持つことを確認
         assert!(!assets_path.to_string_lossy().is_empty());
-        
+
         // "assets"という名前が含まれることを確認
         assert!(assets_path.to_string_lossy().contains("assets"));
     }
