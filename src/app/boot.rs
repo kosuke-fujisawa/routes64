@@ -14,7 +14,7 @@ use crate::audio::RainAudioHandle;
 
 #[derive(Resource, Default)]
 pub struct LoadingResources {
-    pub scenario_json: Option<String>,
+    pub scenario_text: Option<String>,
     pub font_handle: Option<Handle<Font>>,
     #[cfg(feature = "rain_bgm")]
     pub rain_handle: Option<Handle<AudioSource>>,
@@ -46,18 +46,16 @@ impl ResourceReadiness {
 }
 
 fn read_scenario_text() -> anyhow::Result<String> {
-    let base = asset_dir();
-    let p = base.join("scenario.json");
-    let txt = fs::read_to_string(&p).map_err(|e| anyhow::anyhow!("read {:?} failed: {}", p, e))?;
-    Ok(txt)
+    let scenario_path = asset_dir().join("scenario.json");
+    fs::read_to_string(&scenario_path)
+        .map_err(|e| anyhow::anyhow!("read {:?} failed: {}", scenario_path, e))
 }
 
 /// Boot ステートでリソースのロードを開始
 pub fn start_resource_loading(mut commands: Commands, asset_server: Res<AssetServer>) {
     info!("Starting resource loading...");
 
-    // シナリオファイルを同期的に読み込み（将来的に非同期化予定）
-    let scenario_json = match read_scenario_text() {
+    let scenario_text = match read_scenario_text() {
         Ok(content) => content,
         Err(e) => {
             error!(
@@ -65,7 +63,6 @@ pub fn start_resource_loading(mut commands: Commands, asset_server: Res<AssetSer
                 error = %e,
                 "Failed to read scenario file"
             );
-            // ここで「エラー状態」に落とす
             commands.insert_resource(BootError(Some(e.to_string())));
             return;
         }
@@ -79,7 +76,7 @@ pub fn start_resource_loading(mut commands: Commands, asset_server: Res<AssetSer
     let rain_handle: Handle<AudioSource> = asset_server.load(RAIN_AUDIO_PATH);
 
     commands.insert_resource(LoadingResources {
-        scenario_json: Some(scenario_json),
+        scenario_text: Some(scenario_text),
         font_handle: Some(font_handle.clone()),
         #[cfg(feature = "rain_bgm")]
         rain_handle: Some(rain_handle.clone()),
@@ -117,7 +114,7 @@ pub fn check_resources_loaded(
     };
     // シナリオファイルの読み込み状況をチェック
     if !resource_readiness.scenario_loaded {
-        if let Some(json_content) = &loading_resources.scenario_json {
+        if let Some(json_content) = &loading_resources.scenario_text {
             match ScenarioData::load_from_json(json_content) {
                 Ok(scenario_data) => {
                     commands.insert_resource(scenario_data);
@@ -131,6 +128,7 @@ pub fn check_resources_loaded(
                         error = %e,
                         "Failed to parse scenario"
                     );
+                    commands.insert_resource(BootError(Some(e.to_string())));
                     return;
                 }
             }

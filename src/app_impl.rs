@@ -3,7 +3,7 @@ use crate::audio::*;
 use crate::save::*;
 use crate::scenario::*;
 use crate::states::*;
-use crate::ui_impl::setup_background_if_needed;
+use crate::ui::background::{setup_background_if_needed, update_background};
 use crate::ui_impl::*;
 use bevy::asset::AssetPlugin;
 use bevy::prelude::*;

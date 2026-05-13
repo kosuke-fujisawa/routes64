@@ -10,59 +10,6 @@ use bevy::prelude::*;
 #[derive(Resource)]
 pub struct GameFont(pub Handle<Font>);
 
-/// 背景スプライトを無条件で作成する（直接呼び出し用）
-///
-/// 現在は setup_background_if_needed() を使用しているため直接の呼び出しはないが、
-/// 将来的に背景の強制再作成が必要になった場合のために保持している。
-/// 例: 背景画像の動的切り替え、デバッグ時の背景リセットなど
-#[allow(dead_code)]
-pub fn setup_background(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    scenario_data: Res<ScenarioData>,
-) {
-    let background_handle: Handle<Image> =
-        asset_server.load(&scenario_data.scenario.meta.default_background);
-
-    commands.spawn((
-        SpriteBundle {
-            texture: background_handle,
-            transform: Transform::from_scale(Vec3::splat(2.0)),
-            ..default()
-        },
-        BackgroundSprite,
-    ));
-}
-
-/// 背景スプライトが存在しない場合のみ作成する（一意性保証）
-pub fn setup_background_if_needed(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    scenario_data: Res<ScenarioData>,
-    background_query: Query<Entity, With<BackgroundSprite>>,
-) {
-    // 既に背景スプライトが存在する場合は何もしない
-    if background_query.is_empty() {
-        let background_handle: Handle<Image> =
-            asset_server.load(&scenario_data.scenario.meta.default_background);
-
-        commands.spawn((
-            SpriteBundle {
-                texture: background_handle,
-                transform: Transform::from_scale(Vec3::splat(2.0)),
-                ..default()
-            },
-            BackgroundSprite,
-        ));
-        info!("Background sprite created");
-    } else {
-        debug!("Background sprite already exists, skipping creation");
-    }
-}
-
-#[derive(Component)]
-pub struct BackgroundSprite;
-
 pub fn setup_title_ui(
     mut commands: Commands,
     font: Res<GameFont>,
@@ -144,7 +91,18 @@ pub fn setup_playing_ui(
     scenario_data: Res<ScenarioData>,
     current: Res<Current>,
 ) {
-    let node = scenario_data.get_node_or_fallback(&current.id);
+    let node = match scenario_data.get_node_or_fallback(&current.id) {
+        Ok(node) => node,
+        Err(e) => {
+            error!(
+                key = "ui.playing.node_load_failed",
+                id = %current.id,
+                error = %e,
+                "Failed to load node for playing UI"
+            );
+            return;
+        }
+    };
 
     commands
         .spawn((
@@ -239,7 +197,18 @@ pub fn setup_ending_ui(
     scenario_data: Res<ScenarioData>,
     current: Res<Current>,
 ) {
-    let node = scenario_data.get_node_or_fallback(&current.id);
+    let node = match scenario_data.get_node_or_fallback(&current.id) {
+        Ok(node) => node,
+        Err(e) => {
+            error!(
+                key = "ui.ending.node_load_failed",
+                id = %current.id,
+                error = %e,
+                "Failed to load node for ending UI"
+            );
+            return;
+        }
+    };
     let ending = match node.ending.as_ref() {
         Some(ending) => ending,
         None => {
@@ -337,27 +306,6 @@ pub fn setup_ending_ui(
         });
 }
 
-pub fn update_background(
-    mut background_query: Query<&mut Handle<Image>, With<BackgroundSprite>>,
-    asset_server: Res<AssetServer>,
-    scenario_data: Res<ScenarioData>,
-    current: Res<Current>,
-) {
-    if current.is_changed() {
-        if let Ok(mut background_handle) = background_query.get_single_mut() {
-            let new_bg = if let Some(node) = scenario_data.get_node(&current.id) {
-                node.bg
-                    .as_ref()
-                    .unwrap_or(&scenario_data.scenario.meta.default_background)
-            } else {
-                &scenario_data.scenario.meta.default_background
-            };
-
-            *background_handle = asset_server.load(new_bg);
-        }
-    }
-}
-
 type ButtonInteractionQuery<'w, 's> = Query<
     'w,
     's,
@@ -365,6 +313,8 @@ type ButtonInteractionQuery<'w, 's> = Query<
     (Changed<Interaction>, With<Button>, Without<Disabled>),
 >;
 
+/// ボタンのインタラクション処理
+/// Disabledコンポーネントを持つボタンは色変更から除外される
 pub fn button_interaction_system(mut interaction_query: ButtonInteractionQuery) {
     for (interaction, mut color) in interaction_query.iter_mut() {
         match *interaction {

@@ -45,7 +45,7 @@ mod tests {
     fn scenario_get_node_or_fallback_returns_existing_node() {
         let scenario_data = create_test_scenario();
 
-        let node = scenario_data.get_node_or_fallback("R1");
+        let node = scenario_data.get_node_or_fallback("R1").unwrap();
         assert_eq!(node.id, "R1");
         assert_eq!(node.text, "Node R1 text");
     }
@@ -55,7 +55,7 @@ mod tests {
     fn scenario_get_node_or_fallback_returns_root() {
         let scenario_data = create_test_scenario();
 
-        let node = scenario_data.get_node_or_fallback("NONEXISTENT");
+        let node = scenario_data.get_node_or_fallback("NONEXISTENT").unwrap();
         assert_eq!(node.id, "R");
         assert_eq!(node.text, "Root node text");
     }
@@ -87,7 +87,7 @@ mod tests {
 
         let scenario_data = ScenarioData::load_from_json(scenario_json_without_root).unwrap();
 
-        let node = scenario_data.get_node_or_fallback("NONEXISTENT");
+        let node = scenario_data.get_node_or_fallback("NONEXISTENT").unwrap();
         // ルート'R'が存在しないので最初のノード'START'が返される
         assert_eq!(node.id, "START");
         assert_eq!(node.text, "Start node text");

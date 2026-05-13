@@ -3,6 +3,7 @@ mod app_impl;
 mod audio;
 mod save;
 mod scenario;
+mod security;
 mod states;
 mod ui;
 mod ui_impl;

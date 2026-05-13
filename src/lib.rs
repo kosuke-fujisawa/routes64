@@ -5,6 +5,7 @@ pub mod app_impl;
 pub mod audio;
 pub mod save;
 pub mod scenario;
+pub mod security;
 pub mod states;
 pub mod ui;
 pub mod ui_impl;

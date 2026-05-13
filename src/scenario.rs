@@ -146,9 +146,10 @@ impl ScenarioData {
     }
 
     /// ノードが存在しない場合は警告を出してroot('R')にフォールバックする
-    pub fn get_node_or_fallback(&self, id: &str) -> &Node {
+    /// パニックを避けるためResult型で返す
+    pub fn get_node_or_fallback(&self, id: &str) -> Result<&Node> {
         if let Some(node) = self.nodes.get(id) {
-            node
+            Ok(node)
         } else {
             warn!(
                 key = "scenario.node_missing",
@@ -157,18 +158,21 @@ impl ScenarioData {
             );
             // root('R')が存在しない場合は最初のノードを返す（設計上の問題を回避）
             if let Some(root_node) = self.nodes.get("R") {
-                root_node
+                Ok(root_node)
             } else {
                 error!(
                     key = "scenario.root_missing",
                     "Root node 'R' missing, using first available node"
                 );
                 // 最後の手段：最初に見つかったノードを返す
-                self.scenario.nodes.first()
-                    .unwrap_or_else(|| {
-                        // これは設計上起こり得ないが、空のノードリストの場合の処理
-                        panic!("No nodes available in scenario - this indicates a critical configuration error")
-                    })
+                if let Some(first_node) = self.scenario.nodes.first() {
+                    Ok(first_node)
+                } else {
+                    // 空のノードリストの場合はエラーを返す（パニック回避）
+                    Err(anyhow::anyhow!(
+                        "No nodes available in scenario - critical configuration error"
+                    ))
+                }
             }
         }
     }
@@ -325,11 +329,11 @@ mod tests {
         let scenario_data = ScenarioData::load_from_json(sample_scenario_json()).unwrap();
 
         // 存在するノード
-        let existing_node = scenario_data.get_node_or_fallback("R1");
+        let existing_node = scenario_data.get_node_or_fallback("R1").unwrap();
         assert_eq!(existing_node.id, "R1");
 
         // 存在しないノード（root 'R' にフォールバックする）
-        let fallback_node = scenario_data.get_node_or_fallback("NONEXISTENT");
+        let fallback_node = scenario_data.get_node_or_fallback("NONEXISTENT").unwrap();
         assert_eq!(fallback_node.id, "R");
     }
 }
